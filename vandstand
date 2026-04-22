@@ -117,7 +117,7 @@ def git_commit():
     subprocess.run(["git", "push"], check=False)
 
 
-# -----------------------
+# ----------------------
 # MAIN LOGIC
 # -----------------------
 def main():
