@@ -2,17 +2,17 @@ import os
 import requests
 
 API_KEY = os.environ["API_KEY"]
-STATION_ID = "22332"
+
 THRESHOLD = -30
 
 
-def get_latest():
-    url = "https://opendataapi.dmi.dk/v2/metObs/collections/observation/items"
+def get_data():
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
 
     params = {
         "api-key": API_KEY,
-        "stationId": STATION_ID,
-        "period": "latest-24-hours"
+        "parameterId": "waterlevel",
+        "limit": 100
     }
 
     r = requests.get(url, params=params)
@@ -22,32 +22,36 @@ def get_latest():
     data = r.json()
 
     features = data.get("features", [])
+
     print("Features:", len(features))
 
     if not features:
-        return None
+        return []
 
-    # seneste observation
-    latest = sorted(features, key=lambda x: x["properties"]["observed"])[-1]
-
-    return {
-        "value": latest["properties"]["value"],
-        "time": latest["properties"]["observed"]
-    }
+    return [
+        {
+            "value": f["properties"]["value"],
+            "time": f["properties"]["time"]
+        }
+        for f in features
+        if "value" in f.get("properties", {})
+    ]
 
 
 def main():
     print("SCRIPT STARTER")
 
-    data = get_latest()
+    data = get_data()
 
     if not data:
         print("No data available")
         return
 
-    print("Latest:", data)
+    latest = sorted(data, key=lambda x: x["time"])[-1]
 
-    if data["value"] > THRESHOLD:
+    print("Latest:", latest)
+
+    if latest["value"] > THRESHOLD:
         print("🚨 ALARM")
     else:
         print("OK")
