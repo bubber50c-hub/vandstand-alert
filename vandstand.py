@@ -1,88 +1,85 @@
 import os
 import requests
 
-# -----------------------
-# CONFIG
-# -----------------------
 API_KEY = os.environ["API_KEY"]
-
-# ⚠️ Skift hvis nødvendigt
-STATION_ID = "22122"
-
-THRESHOLD = -30  # cm
+STATION_ID = "22332"  # Aarhus virker til observation
+THRESHOLD = -30
 
 
-# -----------------------
-# FETCH DATA
-# -----------------------
-def get_forecast():
-    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
+def fetch(endpoint, params):
+    url = f"https://opendataapi.dmi.dk/v2/oceanObs/collections/{endpoint}/items"
 
-    params = {
-        "api-key": API_KEY,
-        "stationId": STATION_ID,
-        "predictionType": "10minutes",
-        "limit": 200
-    }
+    r = requests.get(url, params=params)
 
-    headers = {
-        "Accept": "application/json"
-    }
-
-    r = requests.get(url, params=params, headers=headers)
-
-    print("STATUS:", r.status_code)
+    print(f"{endpoint} STATUS:", r.status_code)
 
     if r.status_code != 200:
-        print("ERROR RESPONSE:")
         print(r.text)
         return []
 
     data = r.json()
-
-    # Debug: hvor mange datapunkter får vi?
-    features = data.get("features", [])
-    print("Number of features:", len(features))
-
-    if not features:
-        print("No data returned from API")
-        return []
-
-    forecast = []
-
-    for f in features:
-        props = f.get("properties", {})
-
-        value = props.get("value")
-        time = props.get("predictionTime")
-
-        if value is not None:
-            forecast.append({
-                "value": value,
-                "time": time
-            })
-
-    return forecast
+    return data.get("features", [])
 
 
-# -----------------------
-# MAIN
-# -----------------------
+def get_data():
+    # 1. prøv forecast
+    params = {
+        "api-key": API_KEY,
+        "stationId": STATION_ID,
+        "predictionType": "10minutes",
+        "limit": 50
+    }
+
+    features = fetch("tidewater", params)
+
+    print("Forecast points:", len(features))
+
+    if features:
+        return [
+            {
+                "value": f["properties"]["value"],
+                "time": f["properties"]["predictionTime"]
+            }
+            for f in features
+        ]
+
+    # 2. fallback til observation
+    print("Fallback to observations")
+
+    params = {
+        "api-key": API_KEY,
+        "stationId": STATION_ID,
+        "limit": 50
+    }
+
+    features = fetch("observation", params)
+
+    print("Observation points:", len(features))
+
+    return [
+        {
+            "value": f["properties"]["value"],
+            "time": f["properties"]["observed"]
+        }
+        for f in features
+    ]
+
+
 def main():
     print("SCRIPT STARTER")
 
-    forecast = get_forecast()
+    data = get_data()
 
-    if not forecast:
-        print("No usable data")
+    if not data:
+        print("No data at all")
         return
 
-    peak = max(forecast, key=lambda x: x["value"])
+    peak = max(data, key=lambda x: x["value"])
 
     print("Peak:", peak)
 
     if peak["value"] > THRESHOLD:
-        print("🚨 ALARM – vandstand over threshold")
+        print("🚨 ALARM")
     else:
         print("OK")
 
