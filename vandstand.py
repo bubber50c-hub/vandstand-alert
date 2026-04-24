@@ -16,11 +16,10 @@ THRESHOLD = -30  # cm
 # FETCH DATA
 # -----------------------
 def get_forecast():
-    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
     from datetime import datetime, timedelta
-
-now = datetime.utcnow()
-later = now + timedelta(hours=48)
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
+    now = datetime.utcnow()
+    later = now + timedelta(hours=48)
 
 params = {
     "api-key": API_KEY,
