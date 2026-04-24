@@ -9,7 +9,7 @@ THRESHOLD = -30  # cm
 
 
 def get_forecast():
-    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewaterstation/items/20002"
 
     params = {
         "api-key": API_KEY,
