@@ -1,18 +1,52 @@
 import os
 import requests
-import json
 
 API_KEY = os.environ["API_KEY"]
 
-url = "https://dmigw.govcloud.dk/v1/forecastedr/collections/ocean_forecast/items"
+STATION_ID = "20333"  # eksempel – skal evt. justeres
 
-params = {
-    "api-key": API_KEY,
-    "limit": 1
-}
+THRESHOLD = -30  # cm
 
-r = requests.get(url, params=params)
 
-print("STATUS:", r.status_code)
-print("RAW RESPONSE:")
-print(json.dumps(r.json(), indent=2))
+def get_forecast():
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
+
+    params = {
+        "api-key": API_KEY,
+        "stationId": STATION_ID,
+        "predictionType": "10minutes",
+        "limit": 500
+    }
+
+    r = requests.get(url, params=params)
+    data = r.json()
+
+    forecast = []
+
+    for f in data["features"]:
+        v = f["properties"]["value"]
+        t = f["properties"]["predictionTime"]
+
+        forecast.append({
+            "value": v,
+            "time": t
+        })
+
+    return forecast
+
+
+def main():
+    forecast = get_forecast()
+
+    peak = max(forecast, key=lambda x: x["value"])
+
+    print("Peak:", peak)
+
+    if peak["value"] > THRESHOLD:
+        print("🚨 ALARM")
+    else:
+        print("OK")
+
+
+if __name__ == "__main__":
+    main()
