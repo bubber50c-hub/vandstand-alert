@@ -6,9 +6,7 @@ import requests
 # -----------------------
 API_KEY = os.environ["API_KEY"]
 
-# ⚠️ Sæt din rigtige station her
 STATION_ID = "22332"  
-
 THRESHOLD = -30  # cm
 
 
@@ -17,16 +15,19 @@ THRESHOLD = -30  # cm
 # -----------------------
 def get_forecast():
     from datetime import datetime, timedelta
+
     url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
+
     now = datetime.utcnow()
     later = now + timedelta(hours=48)
 
-params = {
-    "api-key": API_KEY,
-    "stationId": STATION_ID,
-    "datetime": f"{now.isoformat()}Z/{later.isoformat()}Z",
-    "limit": 200
-}
+    params = {
+        "api-key": API_KEY,
+        "stationId": STATION_ID,
+        "datetime": f"{now.isoformat()}Z/{later.isoformat()}Z",
+        "limit": 200
+    }
+
     headers = {
         "Accept": "application/json"
     }
@@ -35,7 +36,6 @@ params = {
 
     print("STATUS:", r.status_code)
 
-    # Hvis API ikke svarer korrekt
     if r.status_code != 200:
         print("ERROR RESPONSE:")
         print(r.text)
@@ -43,7 +43,6 @@ params = {
 
     data = r.json()
 
-    # Hvis structure ikke er som forventet
     if "features" not in data:
         print("UNEXPECTED RESPONSE:")
         print(data)
