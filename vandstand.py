@@ -7,7 +7,7 @@ import requests
 API_KEY = os.environ["API_KEY"]
 
 # ⚠️ Skift hvis nødvendigt
-STATION_ID = "22333"
+STATION_ID = "22122"
 
 THRESHOLD = -30  # cm
 
