@@ -3,7 +3,7 @@ import requests
 
 API_KEY = os.environ["API_KEY"]
 
-STATION_ID = "20333"  # eksempel – skal evt. justeres
+STATION_ID = "22332"  # eksempel – skal evt. justeres
 
 THRESHOLD = -30  # cm
 
