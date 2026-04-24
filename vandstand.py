@@ -28,11 +28,6 @@ params = {
     "datetime": f"{now.isoformat()}Z/{later.isoformat()}Z",
     "limit": 200
 }
-
-  
-
-    }
-
     headers = {
         "Accept": "application/json"
     }
