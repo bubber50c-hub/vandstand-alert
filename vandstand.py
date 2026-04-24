@@ -4,8 +4,6 @@ import requests
 # -----------------------
 # CONFIG
 # -----------------------
-API_KEY = os.environ["API_KEY"]
-
 STATION_ID = "22332"  
 THRESHOLD = -30  # cm
 
@@ -22,7 +20,6 @@ def get_forecast():
     later = now + timedelta(hours=48)
 
     params = {
-        "api-key": API_KEY,
         "stationId": STATION_ID,
         "datetime": f"{now.isoformat()}Z/{later.isoformat()}Z",
         "limit": 200
