@@ -1,11 +1,21 @@
 import os
 import requests
+from datetime import datetime, timedelta
 
+# -----------------------
+# CONFIG
+# -----------------------
 API_KEY = os.environ["API_KEY"]
-STATION_ID = "22332"  # Aarhus virker til observation
-THRESHOLD = -30
+
+# Aarhus station (observation fallback virker stabilt her)
+STATION_ID = "22332"
+
+THRESHOLD = -30  # cm
 
 
+# -----------------------
+# API CALL
+# -----------------------
 def fetch(endpoint, params):
     url = f"https://opendataapi.dmi.dk/v2/oceanObs/collections/{endpoint}/items"
 
@@ -14,23 +24,26 @@ def fetch(endpoint, params):
     print(f"{endpoint} STATUS:", r.status_code)
 
     if r.status_code != 200:
-        print(r.text)
+        print("ERROR:", r.text)
         return []
 
     data = r.json()
     return data.get("features", [])
 
 
+# -----------------------
+# GET DATA (forecast → fallback)
+# -----------------------
 def get_data():
-    # 1. prøv forecast
-    params = {
+    # ---------------- FORECAST ----------------
+    params_forecast = {
         "api-key": API_KEY,
         "stationId": STATION_ID,
         "predictionType": "10minutes",
-        "limit": 50
+        "limit": 100
     }
 
-    features = fetch("tidewater", params)
+    features = fetch("tidewater", params_forecast)
 
     print("Forecast points:", len(features))
 
@@ -41,18 +54,23 @@ def get_data():
                 "time": f["properties"]["predictionTime"]
             }
             for f in features
+            if f.get("properties", {}).get("value") is not None
         ]
 
-    # 2. fallback til observation
+    # ---------------- OBSERVATION FALLBACK ----------------
     print("Fallback to observations")
 
-    params = {
+    now = datetime.utcnow()
+    yesterday = now - timedelta(hours=24)
+
+    params_obs = {
         "api-key": API_KEY,
         "stationId": STATION_ID,
-        "limit": 50
+        "datetime": f"{yesterday.isoformat()}Z/{now.isoformat()}Z",
+        "limit": 100
     }
 
-    features = fetch("observation", params)
+    features = fetch("observation", params_obs)
 
     print("Observation points:", len(features))
 
@@ -62,24 +80,29 @@ def get_data():
             "time": f["properties"]["observed"]
         }
         for f in features
+        if f.get("properties", {}).get("value") is not None
     ]
 
 
+# -----------------------
+# MAIN LOGIC
+# -----------------------
 def main():
     print("SCRIPT STARTER")
 
     data = get_data()
 
     if not data:
-        print("No data at all")
+        print("No data available")
         return
 
-    peak = max(data, key=lambda x: x["value"])
+    # 👉 Brug SENESTE måling (ikke max fra 1992 😄)
+    latest = sorted(data, key=lambda x: x["time"])[-1]
 
-    print("Peak:", peak)
+    print("Latest:", latest)
 
-    if peak["value"] > THRESHOLD:
-        print("🚨 ALARM")
+    if latest["value"] > THRESHOLD:
+        print("🚨 ALARM – vandstand over threshold")
     else:
         print("OK")
 
