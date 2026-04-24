@@ -1,49 +1,86 @@
 import os
 import requests
 
+# -----------------------
+# CONFIG
+# -----------------------
 API_KEY = os.environ["API_KEY"]
 
-STATION_ID = "22332"  # eksempel – skal evt. justeres
+# ⚠️ Sæt din rigtige station her
+STATION_ID = "22332"  
 
 THRESHOLD = -30  # cm
 
 
+# -----------------------
+# FETCH DATA
+# -----------------------
 def get_forecast():
-    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewaterstation/items/20002"
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
 
     params = {
         "api-key": API_KEY,
         "stationId": STATION_ID,
-        "predictionType": "10minutes",
-        "limit": 500
+        "limit": 200
     }
 
-    r = requests.get(url, params=params)
+    headers = {
+        "Accept": "application/json"
+    }
+
+    r = requests.get(url, params=params, headers=headers)
+
+    print("STATUS:", r.status_code)
+
+    # Hvis API ikke svarer korrekt
+    if r.status_code != 200:
+        print("ERROR RESPONSE:")
+        print(r.text)
+        return []
+
     data = r.json()
+
+    # Hvis structure ikke er som forventet
+    if "features" not in data:
+        print("UNEXPECTED RESPONSE:")
+        print(data)
+        return []
 
     forecast = []
 
     for f in data["features"]:
-        v = f["properties"]["value"]
-        t = f["properties"]["predictionTime"]
+        props = f.get("properties", {})
 
-        forecast.append({
-            "value": v,
-            "time": t
-        })
+        value = props.get("value")
+        time = props.get("predictionTime")
+
+        if value is not None:
+            forecast.append({
+                "value": value,
+                "time": time
+            })
 
     return forecast
 
 
+# -----------------------
+# MAIN
+# -----------------------
 def main():
+    print("SCRIPT STARTER")
+
     forecast = get_forecast()
+
+    if not forecast:
+        print("No data received")
+        return
 
     peak = max(forecast, key=lambda x: x["value"])
 
     print("Peak:", peak)
 
     if peak["value"] > THRESHOLD:
-        print("🚨 ALARM")
+        print("🚨 ALARM – vandstand over threshold")
     else:
         print("OK")
 
