@@ -4,7 +4,11 @@ import requests
 # -----------------------
 # CONFIG
 # -----------------------
-STATION_ID = "22332"  
+API_KEY = os.environ["API_KEY"]
+
+# ⚠️ Skift hvis nødvendigt
+STATION_ID = "22332"
+
 THRESHOLD = -30  # cm
 
 
@@ -12,16 +16,12 @@ THRESHOLD = -30  # cm
 # FETCH DATA
 # -----------------------
 def get_forecast():
-    from datetime import datetime, timedelta
-
-    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items/"
-
-    now = datetime.utcnow()
-    later = now + timedelta(hours=48)
+    url = "https://opendataapi.dmi.dk/v2/oceanObs/collections/tidewater/items"
 
     params = {
+        "api-key": API_KEY,
         "stationId": STATION_ID,
-        "datetime": f"{now.isoformat()}Z/{later.isoformat()}Z",
+        "predictionType": "10minutes",
         "limit": 200
     }
 
@@ -40,14 +40,17 @@ def get_forecast():
 
     data = r.json()
 
-    if "features" not in data:
-        print("UNEXPECTED RESPONSE:")
-        print(data)
+    # Debug: hvor mange datapunkter får vi?
+    features = data.get("features", [])
+    print("Number of features:", len(features))
+
+    if not features:
+        print("No data returned from API")
         return []
 
     forecast = []
 
-    for f in data["features"]:
+    for f in features:
         props = f.get("properties", {})
 
         value = props.get("value")
@@ -71,7 +74,7 @@ def main():
     forecast = get_forecast()
 
     if not forecast:
-        print("No data received")
+        print("No usable data")
         return
 
     peak = max(forecast, key=lambda x: x["value"])
